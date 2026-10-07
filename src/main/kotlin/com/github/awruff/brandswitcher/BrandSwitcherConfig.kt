@@ -1,60 +1,69 @@
 package com.github.awruff.brandswitcher
 
-import cc.polyfrost.oneconfig.config.Config
-import cc.polyfrost.oneconfig.config.annotations.Dropdown
-import cc.polyfrost.oneconfig.config.annotations.Info
-import cc.polyfrost.oneconfig.config.annotations.Switch
-import cc.polyfrost.oneconfig.config.annotations.Text
-import cc.polyfrost.oneconfig.config.data.InfoType
-import cc.polyfrost.oneconfig.config.data.Mod
-import cc.polyfrost.oneconfig.config.data.ModType
-import cc.polyfrost.oneconfig.utils.commands.CommandManager
+import net.minecraft.client.Minecraft
+import org.polyfrost.oneconfig.api.config.v1.KtConfig
+import org.polyfrost.oneconfig.internal.ui.components.settings.bumpResetEpoch
 
-object BrandSwitcherConfig : Config(
-    Mod("@MOD_NAME@", ModType.UTIL_QOL, "/assets/brandswitcher/icon.svg"),
-    "@MOD_ID@.json"
+object BrandSwitcherConfig : KtConfig(
+    "${BrandSwitcher.ID}.json",
+    BrandSwitcher.NAME,
+    Category.UTILITY,
+    "/assets/brandswitcher/icon.svg",
 ) {
-    @Info(
-        text = "You must rejoin for changes to take affect!",
-        type = InfoType.WARNING,
-        size = 1
+    private val warning by info(
+        name = "You must rejoin for changes to take effect!",
+        type = "warning",
     )
-    var _warning: Boolean = false
 
-    @Dropdown(
-        name = "Presets",
-        options = ["Vanilla", "Forge", "Lunar Client", "Badlion Client", "Custom"]
+    var enabled: Boolean by switch(
+        def = true,
+        name = "Enabled"
     )
-    var preset: Int = 1
 
-    @Text(
-        name = "Brand"
-    )
-    var brand: String = "fml,forge"
-
-    @Switch(
-        name = "Disable Forge",
-        description = "Disable's Forge's packets",
-        category = "Extra"
-    )
-    var noForge = false
-
-    init {
-        initialize()
-
-        CommandManager.register(BrandSwitcherCommand)
-
-        addListener("preset") {
-            when (preset) {
-                0 -> brand = "vanilla"
-                1 -> brand = "fml,forge"
-                2 -> brand = "lunarclient:v2.20.4-2529"
-                3 -> brand = "badlion"
-            }
-        }
-
-        addListener("brand") {
-            if (preset != 4) preset = 4
+    var preset: Int by dropdown(
+        options = Preset.entries.map(Preset::label).toTypedArray(),
+        def = Preset.FABRIC.ordinal,
+        name = "Preset",
+    ).onChange {
+        val preset = Preset.entries[it].brand
+        if (preset != null && preset != brand) {
+            brand = preset
+            bumpResetEpoch(::brand.property)
         }
     }
+
+    var brand: String by text(
+        name = "Brand",
+        def = "fabric",
+    ).onChange {
+        if (Preset.entries[preset].brand != it) {
+            preset = Preset.CUSTOM.ordinal
+            bumpResetEpoch(::preset.property)
+        }
+    }
+
+    private val effective: String?
+        get() = if (enabled) brand else null
+
+    private var sent: String? = null
+
+    init {
+        hideIf(::warning) { Minecraft.getInstance()?.world == null || sent == effective }
+    }
+
+    @JvmStatic
+    fun send(): String? {
+        sent = effective
+        ::warning.property.revaluateDisplay()
+        return sent
+    }
+}
+
+enum class Preset(val label: String, val brand: String?) {
+    VANILLA("Vanilla", "vanilla"),
+    FABRIC("Fabric", "fabric"),
+    FORGE("Forge", "fml,forge"),
+    // TODO: Make this auto-update to match Lunar
+    LUNAR("Lunar Client", "lunarclient:v2.22.44-2640"),
+    CUSTOM("Custom", null),
 }
