@@ -49,6 +49,7 @@ tasks.jar {
         "TweakClass" to "org.spongepowered.asm.launch.MixinTweaker",
         "MixinConfigs" to "mixins.$modId.json",
         "ForceLoadAsMod" to true,
+        "FMLCorePluginContainsFMLMod" to true,
     )
     from("LICENSE") { rename { "${it}_$modId" } }
 }
