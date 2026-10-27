@@ -1,0 +1,12 @@
+[
+  {
+    "modid": "brandswitcher",
+    "name": "Brand Switcher",
+    "description": "Switches Minecraft's client brand.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "https://codeberg.org/awruff/BrandSwitcher",
+    "authorList": ["awruff"],
+    "requiredMods": ["unimixins"]
+  }
+]

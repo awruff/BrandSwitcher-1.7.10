@@ -2,9 +2,11 @@
   "required": true,
   "minVersion": "0.8",
   "package": "com.github.awruff.brandswitcher.mixin",
+  "refmap": "mixins.brandswitcher.refmap.json",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "ClientBrandRetrieverMixin"
+    "FMLCommonHandlerMixin",
+    "NetworkDispatcherMixin"
   ],
   "injectors": {
     "defaultRequire": 1
